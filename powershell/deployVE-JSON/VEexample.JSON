@@ -1,0 +1,19 @@
+{
+    "ip": "x.x.x.x",
+    "netmask": "255.255.255.0",
+    "gateway": "x.x.x.x",
+    "vmNetwork": "VM Network",
+    "vmName": "VE1",
+    "metadataSize": 51,
+    "dataSize": 201,
+    "dnsServers": ["x.x.x.x","x.x.x.x"],
+    "ntpServers": ["time.google.com"],
+    "clusterName": "CohesityVE1",
+    "clusterDomain": "domain.local",
+    "viServer": "vcenter.domain.local",
+    "viHost": "server.domain.local",
+    "viDataStore": "SSD01",
+    "ovfPath": "c:\\cohesity-6.3.1a_release-20190806_1ea88a62.ova",
+    "licenseKey": "XXXX-XXXX-XXXX-XXXX",
+    "dataDataStore": "HDD01"
+}
