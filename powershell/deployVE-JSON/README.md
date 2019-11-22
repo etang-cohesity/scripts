@@ -35,7 +35,7 @@ Place all files in a folder together. then, run the main script like so:
     "viServer": "vcenter.domain.local",
     "viHost": "esxhost01.domain.local",
     "viDataStore": "SSD01",
-    "ovfPath": "c:\path to ova\.ova",
+    "ovfPath": "c:\\path to ova\\.ova",
     "licenseKey": "XXXX-XXXX-XXXX-XXXX",
     "dataDataStore": "HDD01"
 }
