@@ -10,13 +10,14 @@ This PowerShell script deploys a single-node Cohesity Virtual Edition (VE) appli
 
 ## Components
 
-* deployVE.ps1: the main PowerShell script
+* deployVE-JSON.ps1: the main PowerShell script
 * cohesity-api.ps1: the Cohesity REST API helper module
+* VEexample.JSON: example JSON input file
 
 Place all files in a folder together. then, run the main script like so:
 
 ```powershell
-.\deployVE.ps1 -inputJSON 'JSONfile'
+.\deployVE-JSON.ps1 -inputJSON 'JSONfile'
 ```
 
 ```JSON File format
@@ -61,8 +62,9 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployVE/deployVE.ps1).content | Out-File deployVE.ps1; (Get-Content deployVE.ps1) | Set-Content deployVE.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell/deployVE/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/deployVE-JSON/deployVE-JSON.ps1).content | Out-File deployVE-JSON.ps1; (Get-Content deployVE-JSON.ps1) | Set-Content deployVE-JSON.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/deployVE-JSON/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/deployVE-JSON/VEexample.JSON).content | Out-File VEexample.JSON; (Get-Content VEexample.JSON) | Set-Content VEexample.JSON
 # End download commands
 ```
 
