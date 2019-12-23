@@ -14,8 +14,11 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/cancelRunningJobs/cancelRunningJobs.ps1).content | Out-File cancelRunningJobs.ps1; (Get-Content cancelRunningJobs.ps1) | Set-Content cancelRunningJobs.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/cancelRunningJobs/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+$scriptName = 'cancelRunningJobs'
+$repoURL = 'https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell'
+$apiRepoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoURL/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$apiRepoURL/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End download commands
 ```
 

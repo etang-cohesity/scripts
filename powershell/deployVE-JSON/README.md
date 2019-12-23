@@ -61,9 +61,15 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Begin download commands
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/deployVE-JSON/deployVE-JSON.ps1).content | Out-File deployVE-JSON.ps1; (Get-Content deployVE-JSON.ps1) | Set-Content deployVE-JSON.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/deployVE-JSON/cohesity-api.ps1).content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
-(Invoke-WebRequest -Uri https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell/deployVE-JSON/VEexample.JSON).content | Out-File VEexample.JSON; (Get-Content VEexample.JSON) | Set-Content VEexample.JSON
+
+$scriptName = 'deployVE-JSON'
+$JSONexample = 'VEexample.JSON'
+$repoURL = 'https://raw.githubusercontent.com/etang-cohesity/scripts/master/powershell'
+$apiRepoURL = 'https://raw.githubusercontent.com/bseltz-cohesity/scripts/master/powershell'
+(Invoke-WebRequest -Uri "$repoURL/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -Uri "$apiRepoURL/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+(Invoke-WebRequest -Uri "$repoURL/$scriptName/$JSONexample").content | Out-File "$JSONexample"; (Get-Content "$JSONexample") | Set-Content "$JSONexample"
+
 # End download commands
 ```
 
