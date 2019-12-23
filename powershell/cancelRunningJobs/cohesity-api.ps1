@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #  Unofficial PowerShell Module for Cohesity API
-#   version 0.11 - Brian Seltzer - Aug 2019
+#   version 0.12 - Brian Seltzer - Oct 2019
 # . . . . . . . . . . . . . . . . . . . . . . . .
 #
 # 0.6 - Consolidated Windows and Unix versions - June 2018
@@ -9,6 +9,10 @@
 # 0.9 - added setApiProperty / delApiProperty - Apr 2019
 # 0.10 - added $REPORTAPIERRORS constant - Apr 2019
 # 0.11 - added storePassword function and username parsing - Aug 2019
+# 0.12 - added -password to apiauth function - Oct 2019
+# 0.13 - added showProps function - Nov 2019
+# 0.14 - added storePasswordFromInput function - Dec 2019
+# 0.15 - added support for PS Core on Windows - Dec 2019
 #
 # . . . . . . . . . . . . . . . . . . . . . . . . 
 
@@ -26,6 +30,7 @@ else {
 
     # ignore unsigned certificates
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
     Add-Type @"
     using System;
     using System.Net;
@@ -50,7 +55,7 @@ else {
 }
 
 # authentication function
-function apiauth($vip, $username, $domain, [switch] $prompt, [switch] $updatepassword, [switch] $quiet){
+function apiauth($vip, $username, $domain, $password, [switch] $prompt, [switch] $updatepassword, [switch] $quiet){
 
     if(-not $vip){
         write-host 'VIP: ' -foregroundcolor green -nonewline
@@ -85,21 +90,26 @@ function apiauth($vip, $username, $domain, [switch] $prompt, [switch] $updatepas
     $url = $APIROOT + '/public/accessTokens'
 
     try {
-        if($UNIX){
-        $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
-            ConvertTo-Json @{
-                'domain' = $domain; 
-                'password' = (getpwd -vip $vip -username $username -domain $domain -prompt $pr -updatePassword $updatepw); 
-                'username' = $username
-            }) -SkipCertificateCheck
-        $global:CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
+        if($PSVersionTable.PSEdition -eq 'Core'){
+            $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
+                ConvertTo-Json @{
+                    'domain' = $domain; 
+                    'password' = $(if($password){$password}else{getpwd -vip $vip -username $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
+                    'username' = $username
+                }
+            ) -SkipCertificateCheck
         }else{
             $auth = Invoke-RestMethod -Method Post -Uri $url  -Header $HEADER -Body $(
                 ConvertTo-Json @{
                     'domain' = $domain; 
-                    'password' = (getpwd $vip $username -domain $domain -prompt $pr -updatePassword $updatepw); 
+                    'password' = $(if($password){$password}else{getpwd $vip $username -domain $domain -prompt $pr -updatePassword $updatepw}); 
                     'username' = $username
-                })
+                }
+            )
+        }
+        if($UNIX){
+            $global:CURLHEADER = "authorization: $($auth.tokenType) $($auth.accessToken)"
+        }else{
             $WEBCLI.Headers['authorization'] = $auth.tokenType + ' ' + $auth.accessToken;
         }
         $global:AUTHORIZED = $true
@@ -139,10 +149,10 @@ function api($method, $uri, $data){
             if ($uri[0] -ne '/'){ $uri = '/public/' + $uri}
             $url = $APIROOT + $uri
             $body = ConvertTo-Json -Depth 100 $data
-            if ($UNIX){
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck
+            if ($PSVersionTable.PSEdition -eq 'Core'){
+                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER  -SkipCertificateCheck -TimeoutSec 10
             }else{
-                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER
+                $result = Invoke-RestMethod -Method $method -Uri $url -Body $body -Header $HEADER -TimeoutSec 10
             }
             return $result
         }
@@ -270,9 +280,19 @@ if ($UNIX) {
     
         return $clearTextPassword
     }
+
+    function storePasswordFromInput($vip, $username, $domain, $password){
+        if ($null -eq $domain) { $domain = 'local'}
+        $keyName = $vip + ':' + $domain + ':' + $username
+        $keyFile = "$CONFDIR/$keyName"
+        $key = Create-AesKey
+        $key | Out-File $keyFile
+        $encryptedPassword = Encrypt-String $key $password
+        $encryptedPassword | Out-File $keyFile -Append
+    }
 }else{
     function getpwd($vip, $username, $domain, $prompt, $updatePassword){
-
+        if ($null -eq $domain) { $domain = 'local'}
         $keyName = $vip + ':' + $domain + ':' + $username
         $registryPath = 'HKCU:\Software\Cohesity-API'
         $encryptedPasswordText = ''
@@ -296,7 +316,20 @@ if ($UNIX) {
         }        
         $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
         return [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-    }    
+    }
+
+    function storePasswordFromInput($vip, $username, $domain, $password){
+        if ($null -eq $domain) { $domain = 'local'}
+        $keyName = $vip + ':' + $domain + ':' + $username
+        $registryPath = 'HKCU:\Software\Cohesity-API'
+        $encryptedPasswordText = ''
+        $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
+        $encryptedPasswordText = $securePassword | ConvertFrom-SecureString
+        if(!(Test-Path $registryPath)){
+            New-Item -Path $registryPath -Force | Out-Null
+        }
+        Set-ItemProperty -Path "$registryPath" -Name "$keyName" -Value "$encryptedPasswordText"      
+    }
 }
 
 # store password function
@@ -485,4 +518,45 @@ function delApiProperty{
         [Parameter(Mandatory = $True, ValueFromPipeline = $True)][System.Object]$object
     )
     $object.PSObject.Members.Remove($name)
+}
+
+# show properties of an object
+function showProps{
+    param (
+        [Parameter(Mandatory = $True)]$obj,
+        [Parameter()]$parent = 'myobject',
+        [Parameter()]$search = $null
+    )
+    if($obj.getType().Name -eq 'String' -or $obj.getType().Name -eq 'Int64'){
+        if($null -ne $search){
+            if($parent.ToLower().Contains($search) -or ($obj.getType().Name -eq 'String' -and $obj.ToLower().Contains($search))){
+                "$parent = $obj"
+            }
+        }else{
+            "$parent = $obj"
+        }
+        
+    }else{ 
+        foreach($prop in $obj.PSObject.Properties | Sort-Object -Property Name){
+            if($($prop.Value.GetType().Name) -eq 'PSCustomObject'){
+                $thisObj = $prop.Value
+                showProps $thisObj "$parent.$($prop.Name)" $search
+            }elseif($($prop.Value.GetType().Name) -eq 'Object[]'){
+                $thisObj = $prop.Value
+                $x = 0
+                foreach($item in $thisObj){
+                    showProps $thisObj[$x] "$parent.$($prop.Name)[$x]" $search
+                    $x += 1
+                }
+            }else{
+                if($null -ne $search){
+                    if($prop.Name.ToLower().Contains($search.ToLower()) -or ($prop.Value.getType().Name -eq 'String' -and $prop.Value.ToLower().Contains($search.ToLower()))){
+                        "$parent.$($prop.Name) = $($prop.Value)"
+                    }
+                }else{
+                    "$parent.$($prop.Name) = $($prop.Value)"
+                }
+            }
+        }
+    }
 }
